@@ -1,0 +1,622 @@
+<title>Cortes de Tablas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: taller de dos columnas — a la izquierda la hoja de medidas, a la derecha las tablas dibujadas a escala. En teléfono se apilan. */
+:root {
+  --bg: #eef0ec;
+  --surface: #fbfcfa;
+  --fg: #1c2320;
+  --muted: #5f6a64;
+  --line: #d5dad3;
+  --accent: #1d5bc4;
+  --accent-fg: #ffffff;
+  --warn: #a33b20;
+  --board: #e4cfa3;
+  --board-line: #c4a46c;
+  --leftover: #6e5a35;
+  --p0: #cbdcf3; --p1: #d3e9d4; --p2: #f3d8c6; --p3: #e2d7f1;
+  --p4: #efe4b0; --p5: #c9e6e5; --p6: #f0cfda; --p7: #dbe2c0;
+  --piece-line: #2c3531;
+  --f-display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --f-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141917; --surface: #1c2220; --fg: #e6ebe7; --muted: #98a39d; --line: #2f3833;
+    --accent: #78a6ff; --accent-fg: #0d1526; --warn: #f08b6b;
+    --board: #4b3e29; --board-line: #6d5a3a; --leftover: #d9c49a;
+    --p0: #2b4467; --p1: #2d4a35; --p2: #5b3f2d; --p3: #45395d;
+    --p4: #555024; --p5: #234f4e; --p6: #583142; --p7: #454d2b;
+    --piece-line: #c9d2cc;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141917; --surface: #1c2220; --fg: #e6ebe7; --muted: #98a39d; --line: #2f3833;
+  --accent: #78a6ff; --accent-fg: #0d1526; --warn: #f08b6b;
+  --board: #4b3e29; --board-line: #6d5a3a; --leftover: #d9c49a;
+  --p0: #2b4467; --p1: #2d4a35; --p2: #5b3f2d; --p3: #45395d;
+  --p4: #555024; --p5: #234f4e; --p6: #583142; --p7: #454d2b;
+  --piece-line: #c9d2cc;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+}
+.wrap { max-width: 1220px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+header.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+.brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.brand h1 { font-family: var(--f-display); font-weight: 700; font-size: 30px; letter-spacing: .04em; text-transform: uppercase; margin: 0; line-height: 1; }
+.brand p { margin: 0; color: var(--muted); font-size: 14px; }
+
+.layout { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 880px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 18px; display: flex; flex-direction: column; gap: 22px; }
+.sec { display: flex; flex-direction: column; gap: 10px; }
+.sec-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+h2 { font-family: var(--f-display); font-weight: 600; font-size: 15px; letter-spacing: .12em; text-transform: uppercase; margin: 0; color: var(--muted); }
+.chip { font-family: var(--f-mono); font-size: 11px; padding: 2px 7px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label { font-size: 12px; color: var(--muted); letter-spacing: .02em; }
+.field small { font-size: 11px; color: var(--muted); }
+
+input[type="number"], input[type="text"] {
+  width: 100%; min-width: 0;
+  font: 500 15px/1.2 var(--f-mono);
+  color: var(--fg); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 4px;
+  padding: 8px 9px;
+  font-variant-numeric: tabular-nums;
+}
+input[type="text"] { font-family: var(--f-body); font-weight: 500; }
+input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+input::placeholder { color: var(--muted); opacity: .7; }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.seg button { font: 500 13px var(--f-mono); background: transparent; color: var(--muted); border: 0; padding: 6px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; cursor: pointer; }
+.check input { margin-top: 3px; accent-color: var(--accent); width: 16px; height: 16px; }
+.check span small { display: block; color: var(--muted); font-size: 12px; }
+
+.rows { display: flex; flex-direction: column; gap: 6px; }
+.row, .row-h { display: grid; grid-template-columns: 10px minmax(0, 1fr) 4.3rem 4.3rem 3rem 28px; gap: 6px; align-items: center; }
+.row-h { font-size: 11px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.row-h span:nth-child(n+3) { text-align: left; }
+.row input { padding: 7px 7px; font-size: 14px; }
+.sw { width: 10px; height: 26px; border-radius: 2px; border: 1px solid var(--piece-line); }
+.del { width: 28px; height: 30px; border: 0; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; border-radius: 4px; }
+.del:hover { color: var(--warn); background: var(--bg); }
+@media (max-width: 460px) {
+  .row-h { display: none; }
+  .row { grid-template-columns: 10px repeat(3, minmax(0, 1fr)) 28px; row-gap: 4px; padding-bottom: 8px; border-bottom: 1px dashed var(--line); }
+  .row .sw { grid-row: 1 / 3; height: 100%; }
+  .row .nm { grid-column: 2 / 5; }
+  .row .del { grid-column: 5; grid-row: 1; }
+  .row .ql, .row .qw, .row .qq { grid-row: 2; }
+}
+
+.btn { font: 600 14px var(--f-body); border-radius: 4px; padding: 9px 14px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--fg); }
+.btn:hover { border-color: var(--fg); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Resultado */
+.result { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.summary { display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: flex-end; justify-content: space-between; }
+.stats { display: flex; flex-wrap: wrap; gap: 10px 32px; }
+.stat { display: flex; flex-direction: column; }
+.stat b { font-family: var(--f-display); font-weight: 600; font-size: 40px; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 12px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.stat.good b { color: var(--accent); }
+
+.alert { border: 1px solid var(--warn); color: var(--warn); border-radius: 4px; padding: 10px 12px; font-size: 14px; }
+.empty { border: 1px dashed var(--line); border-radius: 6px; padding: 40px 20px; text-align: center; color: var(--muted); }
+
+.boards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.board { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.board-h { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.board-h h3 { font-family: var(--f-display); font-weight: 600; font-size: 20px; letter-spacing: .04em; text-transform: uppercase; margin: 0; }
+.meter { flex: 1 1 120px; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; min-width: 80px; }
+.meter i { display: block; height: 100%; background: var(--accent); }
+.pct { font: 500 13px var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.svgbox { overflow-x: auto; }
+.svgbox svg { display: block; width: 100%; height: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; margin: 0; padding: 0; list-style: none; }
+.legend li { display: flex; align-items: center; gap: 6px; }
+.legend .sw { height: 12px; }
+.legend .dim { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+
+/* SVG */
+.s-board { stroke: var(--board-line); }
+.s-hatch-bg { fill: var(--board); }
+.s-hatch-ln { stroke: var(--board-line); stroke-width: 1; }
+.s-piece { stroke: var(--piece-line); stroke-width: 1; }
+.s-left { fill: none; stroke: var(--leftover); stroke-width: 1; stroke-dasharray: 4 3; }
+.s-txt { fill: var(--fg); font-family: var(--f-mono); font-weight: 500; text-anchor: middle; dominant-baseline: central; }
+.s-name { fill: var(--fg); font-family: var(--f-body); font-weight: 600; text-anchor: middle; dominant-baseline: central; }
+.s-ltxt { fill: var(--leftover); font-family: var(--f-mono); text-anchor: middle; dominant-baseline: central; }
+.s-dim { fill: var(--muted); font-family: var(--f-mono); text-anchor: middle; dominant-baseline: central; }
+.c0 { fill: var(--p0); background: var(--p0); } .c1 { fill: var(--p1); background: var(--p1); }
+.c2 { fill: var(--p2); background: var(--p2); } .c3 { fill: var(--p3); background: var(--p3); }
+.c4 { fill: var(--p4); background: var(--p4); } .c5 { fill: var(--p5); background: var(--p5); }
+.c6 { fill: var(--p6); background: var(--p6); } .c7 { fill: var(--p7); background: var(--p7); }
+
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 4px; font-size: 14px; }
+.note { font-size: 12px; color: var(--muted); margin: 0; }
+@media (prefers-reduced-motion: no-preference) { .meter i { transition: width .3s ease; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Cortes</h1>
+      <p>Tú das las medidas. Acomodo las piezas para gastar menos tablas.</p>
+    </div>
+  </header>
+
+  <div class="layout">
+    <form class="panel" id="form" autocomplete="off">
+      <section class="sec">
+        <div class="sec-h">
+          <h2>Tablero</h2>
+          <div class="seg" role="group" aria-label="Unidad">
+            <button type="button" data-unit="mm" aria-pressed="false">mm</button>
+            <button type="button" data-unit="cm" aria-pressed="true">cm</button>
+            <button type="button" data-unit="in" aria-pressed="false">pulg</button>
+          </div>
+        </div>
+        <div class="fields">
+          <div class="field"><label for="bW">Largo</label><input id="bW" type="number" inputmode="decimal" step="any" min="0"></div>
+          <div class="field"><label for="bH">Ancho</label><input id="bH" type="number" inputmode="decimal" step="any" min="0"></div>
+          <div class="field"><label for="kerf">Grosor de la sierra</label><input id="kerf" type="number" inputmode="decimal" step="any" min="0"><small>Lo que se pierde en cada corte</small></div>
+          <div class="field"><label for="trim">Refilado del borde</label><input id="trim" type="number" inputmode="decimal" step="any" min="0"><small>Se quita en los 4 lados</small></div>
+        </div>
+        <label class="check" for="grain">
+          <input id="grain" type="checkbox">
+          <span>Respetar la veta<small>El largo de cada pieza va siempre a lo largo de la tabla. Desactívalo para poder girarlas.</small></span>
+        </label>
+      </section>
+
+      <section class="sec">
+        <div class="sec-h">
+          <h2>Piezas</h2>
+          <span class="chip" id="exampleChip">ejemplo: librero</span>
+        </div>
+        <div class="row-h" aria-hidden="true"><span></span><span>Nombre</span><span>Largo</span><span>Ancho</span><span>Cant.</span><span></span></div>
+        <div class="rows" id="rows"></div>
+        <div class="btn-row">
+          <button type="button" class="btn" id="add">+ Agregar pieza</button>
+          <button type="button" class="btn" id="clear">Empezar de cero</button>
+        </div>
+      </section>
+    </form>
+
+    <main class="result" id="result" aria-live="polite"></main>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+  const UNITS = {
+    mm: { f: 1, n: 'mm', dec: 1 },
+    cm: { f: 10, n: 'cm', dec: 2 },
+    in: { f: 25.4, n: 'pulg', dec: 3 },
+  };
+  const EPS = 1e-6;
+  const KEY = 'cortes-tablas-v1';
+
+  const example = () => ({
+    unit: 'cm', W: 244, H: 122, kerf: 0.3, trim: 0, grain: false, example: true, nextId: 5,
+    pieces: [
+      { id: 1, name: 'Lateral', l: 180, w: 30, q: 2 },
+      { id: 2, name: 'Repisa', l: 76.4, w: 30, q: 4 },
+      { id: 3, name: 'Techo y base', l: 80, w: 30, q: 2 },
+      { id: 4, name: 'Puerta', l: 89, w: 39.5, q: 2 },
+    ],
+  });
+
+  let state;
+  try { state = JSON.parse(localStorage.getItem(KEY)); } catch (e) { state = null; }
+  if (!state || !Array.isArray(state.pieces) || !UNITS[state.unit]) state = example();
+
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+  const $ = (s) => document.querySelector(s);
+  const num = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+  const fmt = (v) => String(+(+v).toFixed(UNITS[state.unit].dec));
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  /* ---------- Formulario ---------- */
+  const boardInputs = { W: $('#bW'), H: $('#bH'), kerf: $('#kerf'), trim: $('#trim') };
+
+  function fillBoard() {
+    for (const k in boardInputs) boardInputs[k].value = state[k];
+    $('#grain').checked = !!state.grain;
+    document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.unit === state.unit)));
+    $('#exampleChip').hidden = !state.example;
+  }
+
+  function renderRows() {
+    const rows = $('#rows');
+    rows.innerHTML = '';
+    state.pieces.forEach((p, i) => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.dataset.id = p.id;
+      row.innerHTML =
+        `<span class="sw c${i % 8}" aria-hidden="true"></span>` +
+        `<input class="nm" id="pn-${p.id}" data-k="name" type="text" placeholder="Pieza ${i + 1}" aria-label="Nombre de la pieza ${i + 1}" value="${esc(p.name)}">` +
+        `<input class="ql" id="pl-${p.id}" data-k="l" type="number" inputmode="decimal" step="any" min="0" placeholder="Largo" aria-label="Largo" value="${esc(p.l)}">` +
+        `<input class="qw" id="pw-${p.id}" data-k="w" type="number" inputmode="decimal" step="any" min="0" placeholder="Ancho" aria-label="Ancho" value="${esc(p.w)}">` +
+        `<input class="qq" id="pq-${p.id}" data-k="q" type="number" inputmode="numeric" step="1" min="1" placeholder="Cant." aria-label="Cantidad" value="${esc(p.q)}">` +
+        `<button type="button" class="del" aria-label="Quitar pieza ${i + 1}">×</button>`;
+      rows.appendChild(row);
+    });
+  }
+
+  function touched() {
+    if (state.example) { state.example = false; $('#exampleChip').hidden = true; }
+  }
+
+  let timer;
+  const schedule = () => { save(); clearTimeout(timer); timer = setTimeout(run, 160); };
+
+  for (const k in boardInputs) {
+    boardInputs[k].addEventListener('input', (e) => { state[k] = e.target.value; touched(); schedule(); });
+  }
+  $('#grain').addEventListener('change', (e) => { state.grain = e.target.checked; schedule(); });
+
+  $('#rows').addEventListener('input', (e) => {
+    const row = e.target.closest('.row'); if (!row) return;
+    const p = state.pieces.find((x) => String(x.id) === row.dataset.id); if (!p) return;
+    p[e.target.dataset.k] = e.target.value;
+    touched(); schedule();
+  });
+  $('#rows').addEventListener('click', (e) => {
+    const btn = e.target.closest('.del'); if (!btn) return;
+    const id = btn.closest('.row').dataset.id;
+    state.pieces = state.pieces.filter((x) => String(x.id) !== id);
+    touched(); renderRows(); schedule();
+  });
+  $('#rows').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.matches('input')) { e.preventDefault(); addPiece(); }
+  });
+
+  function addPiece() {
+    const id = state.nextId++;
+    state.pieces.push({ id, name: '', l: '', w: '', q: 1 });
+    touched(); renderRows(); save();
+    const el = document.getElementById('pl-' + id); if (el) el.focus();
+  }
+  $('#add').addEventListener('click', addPiece);
+
+  let clearArmed = false;
+  $('#clear').addEventListener('click', (e) => {
+    if (!clearArmed) {
+      clearArmed = true; e.target.textContent = '¿Borrar todas las piezas?';
+      setTimeout(() => { clearArmed = false; e.target.textContent = 'Empezar de cero'; }, 3000);
+      return;
+    }
+    clearArmed = false; e.target.textContent = 'Empezar de cero';
+    state.pieces = []; touched(); addPiece(); schedule();
+  });
+
+  document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => {
+    const to = b.dataset.unit; if (to === state.unit) return;
+    const r = UNITS[state.unit].f / UNITS[to].f;
+    const conv = (v) => (v === '' || v == null) ? v : +(num(v) * r).toFixed(UNITS[to].dec);
+    ['W', 'H', 'kerf', 'trim'].forEach((k) => { state[k] = conv(state[k]); });
+    state.pieces.forEach((p) => { p.l = conv(p.l); p.w = conv(p.w); });
+    state.unit = to;
+    fillBoard(); renderRows(); schedule();
+  }));
+
+  $('#form').addEventListener('submit', (e) => e.preventDefault());
+
+  /* ---------- Optimizador (guillotina, apto para sierra) ---------- */
+  function bestIn(bd, it, rot, fit) {
+    let best = null;
+    const orients = [[it.l, it.w, false]];
+    if (rot && Math.abs(it.l - it.w) > EPS) orients.push([it.w, it.l, true]);
+    for (let ri = 0; ri < bd.free.length; ri++) {
+      const r = bd.free[ri];
+      for (const [w, h, rt] of orients) {
+        if (w > r.w + EPS || h > r.h + EPS) continue;
+        const dw = r.w - w, dh = r.h - h;
+        let s;
+        if (fit === 0) s = (r.w * r.h - w * h) * 1e4 + Math.min(dw, dh);
+        else if (fit === 1) s = Math.min(dw, dh) * 1e7 + Math.max(dw, dh);
+        else s = Math.max(dw, dh) * 1e7 + Math.min(dw, dh);
+        if (!best || s < best.s) best = { s, ri, w, h, rot: rt };
+      }
+    }
+    return best;
+  }
+
+  function commit(bd, c, it, kerf, split) {
+    const r = bd.free[c.ri];
+    bd.free.splice(c.ri, 1);
+    const { w, h } = c;
+    const dw = r.w - w, dh = r.h - h;
+    let horiz;
+    switch (split) {
+      case 0: horiz = dw <= dh; break;
+      case 1: horiz = dw > dh; break;
+      case 2: horiz = w * dh > dw * h; break;
+      case 3: horiz = w * dh <= dw * h; break;
+      case 4: horiz = r.w <= r.h; break;
+      default: horiz = r.w > r.h;
+    }
+    const rw = dw - kerf, bh = dh - kerf;
+    const right = { x: r.x + w + kerf, y: r.y, w: rw, h: horiz ? h : r.h };
+    const bottom = { x: r.x, y: r.y + h + kerf, w: horiz ? r.w : w, h: bh };
+    if (right.w > EPS && right.h > EPS) bd.free.push(right);
+    if (bottom.w > EPS && bottom.h > EPS) bd.free.push(bottom);
+    bd.placed.push({ x: r.x, y: r.y, w, h, rot: c.rot, pi: it.pi });
+    bd.used += w * h;
+  }
+
+  function pack(order, W, H, kerf, rot, fit, split, firstFit) {
+    const boards = [];
+    for (const it of order) {
+      let best = null;
+      for (let b = 0; b < boards.length; b++) {
+        const c = bestIn(boards[b], it, rot, fit);
+        if (c && (!best || c.s < best.s)) { best = c; best.b = b; if (firstFit) break; }
+      }
+      if (!best) {
+        boards.push({ free: [{ x: 0, y: 0, w: W, h: H }], placed: [], used: 0 });
+        best = bestIn(boards[boards.length - 1], it, rot, fit);
+        if (!best) return null;
+        best.b = boards.length - 1;
+      }
+      commit(boards[best.b], best, it, kerf, split);
+    }
+    return boards;
+  }
+
+  function scoreOf(boards, area) {
+    const last = boards[boards.length - 1];
+    let bigFree = 0;
+    for (const r of last.free) bigFree = Math.max(bigFree, r.w * r.h);
+    // menos tablas primero; luego dejar la última lo más vacía posible y con un sobrante grande y reutilizable
+    return boards.length + 0.5 * (last.used / area) - 0.1 * (bigFree / area);
+  }
+
+  function mulberry32(a) {
+    return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+
+  const SORTS = [
+    (a, b) => b.l * b.w - a.l * a.w,
+    (a, b) => Math.max(b.l, b.w) - Math.max(a.l, a.w) || b.l * b.w - a.l * a.w,
+    (a, b) => (b.l + b.w) - (a.l + a.w),
+    (a, b) => b.l - a.l || b.w - a.w,
+    (a, b) => b.w - a.w || b.l - a.l,
+    (a, b) => Math.min(b.l, b.w) - Math.min(a.l, a.w) || Math.max(b.l, b.w) - Math.max(a.l, a.w),
+  ];
+
+  function optimize(items, W, H, kerf, rot) {
+    const area = W * H;
+    const t0 = performance.now();
+    let best = null;
+    const consider = (res) => { if (!res) return; const s = scoreOf(res, area); if (!best || s < best.s - 1e-9) best = { boards: res, s }; };
+
+    outer:
+    for (const sort of SORTS) {
+      const ord = items.slice().sort(sort);
+      for (let fit = 0; fit < 3; fit++)
+        for (let split = 0; split < 6; split++)
+          for (let ff = 0; ff < 2; ff++) {
+            consider(pack(ord, W, H, kerf, rot, fit, split, ff === 1));
+            if (best && performance.now() - t0 > 450) break outer;
+          }
+    }
+    // búsqueda aleatoria con semilla fija (mismo resultado cada vez)
+    const rnd = mulberry32(20261108);
+    const base = items.slice().sort(SORTS[0]);
+    let iter = 0;
+    while (performance.now() - t0 < 700 && iter < 1500) {
+      iter++;
+      const ord = base.slice();
+      const swaps = 1 + Math.floor(rnd() * Math.max(1, ord.length / 3));
+      for (let s = 0; s < swaps; s++) {
+        const i = Math.floor(rnd() * ord.length), j = Math.floor(rnd() * ord.length);
+        const t = ord[i]; ord[i] = ord[j]; ord[j] = t;
+      }
+      consider(pack(ord, W, H, kerf, rot, Math.floor(rnd() * 3), Math.floor(rnd() * 6), rnd() < 0.5));
+    }
+    return best ? best.boards : [];
+  }
+
+  /* ---------- Resultado ---------- */
+  let lastPlan = null;
+
+  function run() {
+    const out = $('#result');
+    const U = UNITS[state.unit];
+    const BW = num(state.W), BH = num(state.H), kerf = Math.max(0, num(state.kerf)), trim = Math.max(0, num(state.trim));
+    const W = BW - 2 * trim, H = BH - 2 * trim;
+    if (!(W > 0 && H > 0)) {
+      out.innerHTML = `<div class="empty">Escribe el largo y el ancho de tu tablero para empezar.</div>`;
+      lastPlan = null; return;
+    }
+    const rot = !state.grain;
+    const items = [], tooBig = [];
+    let count = 0;
+    state.pieces.forEach((p, i) => {
+      const l = num(p.l), w = num(p.w), q = Math.min(500, Math.floor(num(p.q)));
+      if (!(l > 0 && w > 0 && q > 0)) return;
+      const fits = (l <= W + EPS && w <= H + EPS) || (rot && w <= W + EPS && l <= H + EPS);
+      const name = (p.name || '').trim() || `Pieza ${i + 1}`;
+      if (!fits) { tooBig.push(`${esc(name)} (${fmt(l)} × ${fmt(w)})`); return; }
+      for (let k = 0; k < q && count < 2000; k++, count++) items.push({ l, w, pi: i });
+    });
+
+    let html = '';
+    if (tooBig.length) {
+      html += `<div class="alert">No caben en el tablero de ${fmt(BW)} × ${fmt(BH)} ${U.n}${trim ? ' (con refilado)' : ''}: ${tooBig.join(', ')}.${state.grain ? ' Prueba desactivar «Respetar la veta».' : ''}</div>`;
+    }
+    if (!items.length) {
+      out.innerHTML = html + `<div class="empty">Agrega piezas con largo, ancho y cantidad para ver cómo se acomodan.</div>`;
+      lastPlan = null; return;
+    }
+
+    const boards = optimize(items, W, H, kerf, rot);
+    const pieceArea = items.reduce((s, it) => s + it.l * it.w, 0);
+    const total = boards.length * BW * BH;
+    const eff = pieceArea / total;
+    const m2 = (a) => (a * U.f * U.f / 1e6);
+    const leftover = m2(total - pieceArea);
+
+    html += `<div class="summary"><div class="stats">
+      <div class="stat good"><b>${boards.length}</b><span>${boards.length === 1 ? 'tabla necesaria' : 'tablas necesarias'}</span></div>
+      <div class="stat"><b>${Math.round(eff * 100)}%</b><span>aprovechamiento</span></div>
+      <div class="stat"><b>${items.length}</b><span>piezas</span></div>
+      <div class="stat"><b>${leftover.toFixed(2)}</b><span>m² de sobrante</span></div>
+    </div>
+    <button type="button" class="btn primary" id="copy">Copiar lista de cortes</button></div>`;
+
+    html += `<div class="boards">`;
+    boards.forEach((bd, bi) => {
+      const used = bd.used / (BW * BH);
+      html += `<article class="board">
+        <div class="board-h"><h3>Tabla ${bi + 1}</h3><div class="meter" aria-hidden="true"><i style="width:${(used * 100).toFixed(1)}%"></i></div><span class="pct">${Math.round(used * 100)}% usado</span></div>
+        <div class="svgbox">${drawBoard(bd, bi, BW, BH, trim, kerf)}</div>
+        ${legend(bd)}
+      </article>`;
+    });
+    html += `</div><p class="note">Las piezas están dibujadas a escala. Los recuadros punteados son sobrantes que puedes guardar. Corta primero los cortes que atraviesan toda la tabla.</p>`;
+    out.innerHTML = html;
+    lastPlan = { boards, BW, BH, kerf, trim, eff };
+    $('#copy').addEventListener('click', copyPlan);
+  }
+
+  function pieceName(pi) {
+    const p = state.pieces[pi];
+    return ((p && p.name) || '').trim() || `Pieza ${pi + 1}`;
+  }
+
+  function groupPlaced(bd) {
+    const m = new Map();
+    bd.placed.forEach((pl) => { m.set(pl.pi, (m.get(pl.pi) || 0) + 1); });
+    return [...m.entries()].sort((a, b) => a[0] - b[0]);
+  }
+
+  function legend(bd) {
+    return `<ul class="legend">` + groupPlaced(bd).map(([pi, n]) => {
+      const p = state.pieces[pi];
+      return `<li><span class="sw c${pi % 8}"></span>${n} × ${esc(pieceName(pi))} <span class="dim">${fmt(num(p.l))} × ${fmt(num(p.w))}</span></li>`;
+    }).join('') + `</ul>`;
+  }
+
+  function drawBoard(bd, bi, BW, BH, trim, kerf) {
+    const M = Math.max(BW, BH);
+    const pad = M * 0.045;
+    const fsDim = M * 0.022;
+    const hs = M / 70;
+    const minS = Math.min(BW, BH);
+    let s = `<svg viewBox="${-pad} ${-pad} ${BW + pad * 1.4} ${BH + pad * 1.4}" role="img" aria-label="Tabla ${bi + 1}: ${bd.placed.length} piezas">`;
+    s += `<defs><pattern id="hatch${bi}" width="${hs}" height="${hs}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect class="s-hatch-bg" width="${hs}" height="${hs}"/><line class="s-hatch-ln" x1="0" y1="0" x2="0" y2="${hs}" vector-effect="non-scaling-stroke"/></pattern></defs>`;
+    s += `<rect x="0" y="0" width="${BW}" height="${BH}" class="s-board" style="fill:url(#hatch${bi})" vector-effect="non-scaling-stroke"/>`;
+    s += `<text class="s-dim" x="${BW / 2}" y="${-pad / 2}" font-size="${fsDim}">${fmt(BW)}</text>`;
+    s += `<text class="s-dim" x="${-pad / 2}" y="${BH / 2}" font-size="${fsDim}" transform="rotate(-90 ${-pad / 2} ${BH / 2})">${fmt(BH)}</text>`;
+
+    // sobrantes útiles
+    for (const r of bd.free) {
+      if (Math.min(r.w, r.h) < minS * 0.06 || r.w * r.h < BW * BH * 0.015) continue;
+      const x = r.x + trim, y = r.y + trim;
+      s += `<rect class="s-left" x="${x}" y="${y}" width="${r.w}" height="${r.h}" vector-effect="non-scaling-stroke"/>`;
+      const label = `${fmt(r.w)} × ${fmt(r.h)}`;
+      const fs = Math.min(r.h * 0.22, r.w / (label.length * 0.62), M * 0.02);
+      if (fs > M * 0.009) s += `<text class="s-ltxt" x="${x + r.w / 2}" y="${y + r.h / 2}" font-size="${fs}">${label}</text>`;
+    }
+
+    for (const pl of bd.placed) {
+      const x = pl.x + trim, y = pl.y + trim;
+      const p = state.pieces[pl.pi];
+      s += `<rect class="s-piece c${pl.pi % 8}" x="${x}" y="${y}" width="${pl.w}" height="${pl.h}" vector-effect="non-scaling-stroke"><title>${esc(pieceName(pl.pi))} ${fmt(num(p.l))} × ${fmt(num(p.w))}${pl.rot ? ' (girada)' : ''}</title></rect>`;
+      const dims = `${fmt(num(p.l))}×${fmt(num(p.w))}`;
+      const name = pieceName(pl.pi);
+      const vertical = pl.h > pl.w * 1.6;
+      const span = vertical ? pl.h : pl.w, thick = vertical ? pl.w : pl.h;
+      const fs = Math.min(thick * 0.3, span / (dims.length * 0.64), M * 0.026);
+      if (fs < M * 0.008) continue;
+      const cx = x + pl.w / 2, cy = y + pl.h / 2;
+      const tr = vertical ? ` transform="rotate(-90 ${cx} ${cy})"` : '';
+      const nfs = Math.min(fs * 0.9, span / (name.length * 0.58));
+      const showName = thick > fs * 3.2 && nfs > M * 0.008;
+      if (showName) {
+        s += `<g${tr}><text class="s-name" x="${cx}" y="${cy - fs * 0.62}" font-size="${nfs}">${esc(name)}</text>`;
+        s += `<text class="s-txt" x="${cx}" y="${cy + fs * 0.62}" font-size="${fs}">${dims}</text></g>`;
+      } else {
+        s += `<text class="s-txt"${tr} x="${cx}" y="${cy}" font-size="${fs}">${dims}</text>`;
+      }
+    }
+    return s + `</svg>`;
+  }
+
+  function planText() {
+    const U = UNITS[state.unit];
+    const { boards, BW, BH, kerf, trim, eff } = lastPlan;
+    const lines = [];
+    lines.push(`Plan de cortes · tablero ${fmt(BW)} × ${fmt(BH)} ${U.n} · sierra ${fmt(kerf)} ${U.n}${trim ? ` · refilado ${fmt(trim)} ${U.n}` : ''}`);
+    lines.push(`Tablas necesarias: ${boards.length} · Aprovechamiento: ${Math.round(eff * 100)}%`);
+    boards.forEach((bd, bi) => {
+      lines.push('');
+      lines.push(`Tabla ${bi + 1} (${Math.round(bd.used / (BW * BH) * 100)}% usado)`);
+      groupPlaced(bd).forEach(([pi, n]) => {
+        const p = state.pieces[pi];
+        lines.push(`  ${n} × ${pieceName(pi)}  ${fmt(num(p.l))} × ${fmt(num(p.w))} ${U.n}`);
+      });
+    });
+    return lines.join('\n');
+  }
+
+  function toast(msg) {
+    const t = $('#toast'); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, 2200);
+  }
+
+  function copyPlan() {
+    if (!lastPlan) return;
+    const text = planText();
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+      ta.remove();
+      toast(ok ? 'Lista copiada' : 'No se pudo copiar. Selecciona el texto a mano.');
+    };
+    try {
+      navigator.clipboard.writeText(text).then(() => toast('Lista copiada'), fallback);
+    } catch (e) { fallback(); }
+  }
+
+  fillBoard();
+  renderRows();
+  run();
+})();
+</script>
